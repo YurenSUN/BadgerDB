@@ -14,79 +14,152 @@
 #include "exceptions/bad_buffer_exception.h"
 #include "exceptions/hash_not_found_exception.h"
 
-namespace badgerdb { 
+namespace badgerdb
+{
 
+/**
+ * Constructor of BufMgr class
+ * Allocates an array for the buffer pool with bufs page frames and a corresponding BufDesc table
+ */
 BufMgr::BufMgr(std::uint32_t bufs)
-	: numBufs(bufs) {
+	: numBufs(bufs)
+{
 	bufDescTable = new BufDesc[bufs];
 
-  for (FrameId i = 0; i < bufs; i++) 
-  {
-  	bufDescTable[i].frameNo = i;
-  	bufDescTable[i].valid = false;
-  }
+	for (FrameId i = 0; i < bufs; i++)
+	{
+		bufDescTable[i].frameNo = i;
+		bufDescTable[i].valid = false;
+	}
 
-  bufPool = new Page[bufs];
+	bufPool = new Page[bufs];
 
-	int htsize = ((((int) (bufs * 1.2))*2)/2)+1;
-  hashTable = new BufHashTbl (htsize);  // allocate the buffer hash table
+	int htsize = ((((int)(bufs * 1.2)) * 2) / 2) + 1;
+	hashTable = new BufHashTbl(htsize); // allocate the buffer hash table
 
-  clockHand = bufs - 1;
+	clockHand = bufs - 1;
 }
 
+/**
+ * Destructor of BufMgr class
+ * Flushes out all dirty pages and deallocates the buffer pool and the BufDesc table
+ */
+BufMgr::~BufMgr()
+{
+	// flushes out all dirty pages
+	for (FrameId i = 0; i < numBufs; i++)
+	{
+		//TODO: whether check bufDescTable[clockHand].valid
+		if(bufDescTable[i].dirty && bufDescTable[i].valid){
+			bufDescTable[i].file->writePage(bufPool[i]);
+			bufDescTable[i].dirty = false;
+		}
+	}
 
-BufMgr::~BufMgr() {
-	delete [] bufPool;
+	//deallocates the buffer pool
+	delete[] bufPool;
+
+	//deallocates the BufDesc table
+	delete[] bufDescTable;
 }
 
+/**
+ * Advance clock to next frame in the buffer pool
+ * 
+ * @param frame   	Frame reference, frame ID of allocated frame returned via this variable
+ * @throws BufferExceededException If no such buffer is found which can be allocated
+ */ 
 void BufMgr::advanceClock()
 {
-
+	clockHand = (clockHand + 1) % numBufs;
 }
 
-void BufMgr::allocBuf(FrameId & frame) 
+/**
+ * Allocates a free frame
+ * if necessary, writing a dirty page back to disk
+ */
+void BufMgr::allocBuf(FrameId &frame)
 {
-}
+	//using the clock algorithm
+	std::uint32_t pinned = 0;
+	advanceClock()
 
-	
-void BufMgr::readPage(File* file, const PageId pageNo, Page*& page)
-{
-}
-
-
-void BufMgr::unPinPage(File* file, const PageId pageNo, const bool dirty) 
-{
-}
-
-void BufMgr::flushFile(const File* file) 
-{
-}
-
-void BufMgr::allocPage(File* file, PageId &pageNo, Page*& page) 
-{
-}
-
-void BufMgr::disposePage(File* file, const PageId PageNo)
-{
-    
-}
-
-void BufMgr::printSelf(void) 
-{
-  BufDesc* tmpbuf;
-	int validFrames = 0;
-  
-  for (std::uint32_t i = 0; i < numBufs; i++)
+	while (bufDescTable[clockHand].valid)
 	{
-  	tmpbuf = &(bufDescTable[i]);
+		if(bufDescTable[clockHand].refbit)
+		{
+			//clear refbit and advance clock
+			bufDescTable[clockHand].refbit = false;
+			advanceClock();
+			continue;
+		}
+		
+		if(bufDescTable[clockHand].pinned)
+		{
+			//Throws BufferExceededException if all buffer frames are pinned. 
+			pinned = pinned + 1;
+			if(pinned == numBufs) throw BufferExceededException;
+			
+			advanceClock();
+			continue;
+		}
+
+		//have a valid, not referenced, and unpinned page
+		//use this frame
+		if(bufDescTable[clockHand].dirty)
+		{
+			//flush page to disk
+			bufDescTable[clockHand].file->writePage(bufPool[clockHand]);
+			bufDescTable[clockHand].dirty = false;	
+		}
+		//if the buffer frame allocated has a valid page in it, remove the appropriate entry from the hash table.
+		hashTable->remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
+		break;
+	}
+
+	bufDescTable[clockHand].Clear();
+
+	//set the frame ID of allocated frame returned via this variable
+	//Set() in the clock algo will be called during readPage() and allocPage()
+	frame = clockHand;
+}
+
+void BufMgr::readPage(File *file, const PageId pageNo, Page *&page)
+{
+}
+
+void BufMgr::unPinPage(File *file, const PageId pageNo, const bool dirty)
+{
+}
+
+void BufMgr::flushFile(const File *file)
+{
+}
+
+void BufMgr::allocPage(File *file, PageId &pageNo, Page *&page)
+{
+}
+
+void BufMgr::disposePage(File *file, const PageId PageNo)
+{
+}
+
+void BufMgr::printSelf(void)
+{
+	BufDesc *tmpbuf;
+	int validFrames = 0;
+
+	for (std::uint32_t i = 0; i < numBufs; i++)
+	{
+		tmpbuf = &(bufDescTable[i]);
 		std::cout << "FrameNo:" << i << " ";
 		tmpbuf->Print();
 
-  	if (tmpbuf->valid == true)
-    	validFrames++;
-  }
+		if (tmpbuf->valid == true)
+			validFrames++;
+	}
 
 	std::cout << "Total Number of Valid Frames:" << validFrames << "\n";
 }
 
-}
+} // namespace badgerdb
