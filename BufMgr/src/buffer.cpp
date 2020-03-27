@@ -126,32 +126,37 @@ void BufMgr::allocBuf(FrameId &frame)
 
 void BufMgr::readPage(File *file, const PageId pageNo, Page *&page)
 {
-	 try{
-       hashTable->lookup(file, pageNo, clockHand);
+    try
+    {
+        hashTable->lookup(file, pageNo, clockHand);
         bufDescTable[clockHand].refbit=true;
         bufDescTable[clockHand].pinCnt++;
         return;
 
-    }catch(HashNotFoundException e){
-	FrameId frameId = NULL;
-    this -> allocBuf(frameId);
-    Page new_page = file->readPage(pageNo);
-	bufPool[clockHand]= new_page;
-    hashTable -> insert(file, pageNo, frameId);
-    bufDescTable[clockHand].Set(file, pageNo);
+    }catch(HashNotFoundException e)
+    {
+       FrameId frameId = 0;
+       this -> allocBuf(frameId);
+       Page new_page = file->readPage(pageNo);
+       bufPool[clockHand]= new_page;
+       hashTable -> insert(file, pageNo, frameId);
+       bufDescTable[clockHand].Set(file, pageNo);
     }
 }
 
 void BufMgr::unPinPage(File *file, const PageId pageNo, const bool dirty)
 {
-	 try{
+     try
+     {
        hashTable->lookup(file, pageNo, clockHand);
-       bufDescTable[pageNo].frameNo
-       if(!bufDescTable[pageNo].pinCnt){
+       if(!bufDescTable[pageNo].pinCnt)
+       {
            throw PageNotPinnedException(file->filename(), pageNo, clockHand);
        }
+	     
        --bufDescTable[pageNo].pinCnt;
-       if (bufDescTable[pageNo].dirty){
+       if (bufDescTable[pageNo].dirty)
+       {
            bufDescTable[pageNo].dirty = false;
        }
     }catch (HashNotFoundException e){
