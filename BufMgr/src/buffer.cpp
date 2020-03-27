@@ -82,7 +82,7 @@ void BufMgr::allocBuf(FrameId &frame)
 {
 	//using the clock algorithm
 	std::uint32_t pinned = 0;
-	advanceClock()
+	advanceClock();
 
 	while (bufDescTable[clockHand].valid)
 	{
@@ -94,11 +94,11 @@ void BufMgr::allocBuf(FrameId &frame)
 			continue;
 		}
 		
-		if(bufDescTable[clockHand].pinned)
+		if(bufDescTable[clockHand].pinCnt)
 		{
 			//Throws BufferExceededException if all buffer frames are pinned. 
 			pinned = pinned + 1;
-			if(pinned == numBufs) throw BufferExceededException;
+			if(pinned == numBufs) throw BufferExceededException();
 			
 			advanceClock();
 			continue;
@@ -126,10 +126,36 @@ void BufMgr::allocBuf(FrameId &frame)
 
 void BufMgr::readPage(File *file, const PageId pageNo, Page *&page)
 {
+	 try{
+       hashTable->lookup(file, pageNo, clockHand);
+        bufDescTable[clockHand].refbit=true;
+        bufDescTable[clockHand].pinCnt++;
+        return;
+
+    }catch(HashNotFoundException e){
+	FrameId frameId = NULL;
+    this -> allocBuf(frameId);
+    Page new_page = file->readPage(pageNo);
+	bufPool[clockHand]= new_page;
+    hashTable -> insert(file, pageNo, frameId);
+    bufDescTable[clockHand].Set(file, pageNo);
+    }
 }
 
 void BufMgr::unPinPage(File *file, const PageId pageNo, const bool dirty)
 {
+	 try{
+       hashTable->lookup(file, pageNo, clockHand);
+       bufDescTable[pageNo].frameNo
+       if(!bufDescTable[pageNo].pinCnt){
+           throw PageNotPinnedException(file->filename(), pageNo, clockHand);
+       }
+       --bufDescTable[pageNo].pinCnt;
+       if (bufDescTable[pageNo].dirty){
+           bufDescTable[pageNo].dirty = false;
+       }
+    }catch (HashNotFoundException e){
+    }
 }
 
 void BufMgr::flushFile(const File *file)
