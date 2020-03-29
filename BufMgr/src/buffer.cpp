@@ -203,13 +203,13 @@ void BufMgr::flushFile(const File *file)
 			// throws PagePinnedException if any page of the file is pinned in the buffer pool 
 			if (bufDescTable[i].pinCnt)
 			{
-				throw PagePinnedException(file->filename, bufDescTable[i].pageNo, bufDescTable[i].frameNo)
+				throw PagePinnedException(file->filename(), bufDescTable[i].pageNo, bufDescTable[i].frameNo);
 			}
 			
 			//throws BadBufferException f any frame allocated to the file is found to be invalid
 			if(bufDescTable[i].valid)
 			{
-				throw BadBufferException(bufDescTable[i].frameNo, bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit)
+				throw BadBufferException(bufDescTable[i].frameNo, bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit);
 			}
 
 			//if the page is dirty, flush the page to disk and then set the dirty bit
@@ -222,7 +222,7 @@ void BufMgr::flushFile(const File *file)
 			hashTable->remove(file, bufDescTable[i].pageNo);
 
 			//invoke the Clear() method of BufDesc for the page frame
-			bufDescTable[i].Clear()
+			bufDescTable[i].Clear();
 			
 		}
 	}
@@ -260,7 +260,7 @@ void BufMgr::disposePage(File *file, const PageId PageNo)
 		// if the page to be deleted is allocated a frame in the buffer pool,
 		// that frame is freed and correspondingly entry from hash table is also removed.
 		FrameId frameNo; // of the (file, pageNo)
-		hashTable->lookup(file, pageNo, &frameNo);
+		hashTable->lookup(file, PageNo, frameNo);
 
 		hashTable->remove(file, PageNo);
 		bufDescTable[frameNo].Clear();
