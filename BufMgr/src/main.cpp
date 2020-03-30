@@ -58,6 +58,9 @@ void test3();
 void test4();
 void test5();
 void test6();
+void test7();
+void test8();
+void test9();
 void testBufMgr();
 
 int main() 
@@ -172,6 +175,9 @@ void testBufMgr()
 	fork_test(test4);
 	fork_test(test5);
 	fork_test(test6);
+    fork_test(test7);
+    fork_test(test8);
+    fork_test(test9);
 
 	//Close files before deleting them
 	file1.close();
@@ -199,7 +205,7 @@ void test1()
 	{
 		bufMgr->allocPage(file1ptr, pid[i], page);
 		sprintf((char*)tmpbuf, "test.1 Page %d %7.1f", pid[i], (float)pid[i]);
-		rid[i] = page->insertRecord(tmpbuf);
+        rid[i] = page->insertRecord(tmpbuf);
 		bufMgr->unPinPage(file1ptr, pid[i], true);
 	}
 
@@ -273,6 +279,8 @@ void test3()
 	std::cout << "Test 3 passed" << "\n";
 }
 
+
+
 void test4()
 {
 	bufMgr->allocPage(file4ptr, i, page);
@@ -335,4 +343,73 @@ void test6()
 		bufMgr->unPinPage(file1ptr, i, true);
 
 	bufMgr->flushFile(file1ptr);
+}
+
+void test7()
+{
+    //flushing file with pages unpinned. Should not generate an error
+   for (i = 0; i < num; i++)
+    {
+        bufMgr->allocPage(file1ptr, pid[i], page);
+        sprintf((char*)tmpbuf, "test.1 Page %d %7.1f", pid[i], (float)pid[i]);
+        rid[i] = page->insertRecord(tmpbuf);
+        bufMgr->unPinPage(file1ptr, pid[i], true);
+    }
+    
+   for (i = 0; i < num; i++)
+    {
+        bufMgr->readPage(file1ptr, pid[i], page);
+        bufMgr->unPinPage(file1ptr, pid[i], false);
+    }
+    
+    try
+    {
+        bufMgr->flushFile(file1ptr);
+    }
+    catch(PagePinnedException &e)
+    {
+         PRINT_ERROR("ERROR :: Pages unpinned for file being flushed. Exception should have not been thrown before execution reaches this point.");
+    }
+    
+    std::cout << "Test 7 passed" << "\n";
+}
+
+
+
+void test8()
+{
+    //desposed pages readed will generate an error
+    bufMgr->readPage(file1ptr, 1, page);
+
+    try
+    {
+        bufMgr->disposePage(file1ptr, 1);
+        bufMgr->readPage(file1ptr, 1, page);
+        PRINT_ERROR("ERROR :: Pages deleted cannot be readed. Exception should have been thrown before execution reaches this point.");
+        
+    }catch(InvalidPageException &e)
+    {
+    }
+    
+    std::cout << "Test 8 passed" << "\n";
+}
+
+
+void test9()
+{
+    //desposed multiple pages
+    try
+    {
+        for (i = 1; i <= num; i++) {
+               bufMgr->disposePage(file1ptr, i);
+        }
+        
+        bufMgr->readPage(file1ptr, i, page);
+        PRINT_ERROR("ERROR :: Pages deleted cannot be readed. Exception should have been thrown before execution reaches this point.");
+        
+    }catch(InvalidPageException &e)
+    {
+    }
+    
+    std::cout << "Test 9 passed" << "\n";
 }
