@@ -10,6 +10,9 @@
 * Due Date: 04/01/2020
 */
 
+/**
+* This main file shows the use of File and Page classes and contains test cases for the Buffer manager.
+*/
 
 #include <iostream>
 #include <stdlib.h>
