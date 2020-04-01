@@ -17,6 +17,12 @@
 * Due Date: 04/01/2020
 */
 
+/**
+* Buffer manager file provides the fuctions for allocating pages and accessing pages using Clock Algorithm.
+* It is used to control the uses of memory by pages.
+*
+*/
+
 #include <memory>
 #include <iostream>
 #include "buffer.h"
