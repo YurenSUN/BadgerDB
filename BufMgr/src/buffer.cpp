@@ -5,6 +5,18 @@
  * Copyright (c) 2012 Database Group, Computer Sciences Department, University of Wisconsin-Madison.
  */
 
+/**
+* FILE: buffer.cpp
+* ------------------
+* Author: Jiaru Fu (jfu57@wisc.edu)
+* Author: Yuren Sun (ysun299@wisc.edu)
+* Author: Tambre Hu (thu53@wisc.edu)
+* Course: CS 564
+* File Name: buffer.cpp
+* Professor: Paris Koutris
+* Due Date: 04/01/2020
+*/
+
 #include <memory>
 #include <iostream>
 #include "buffer.h"
