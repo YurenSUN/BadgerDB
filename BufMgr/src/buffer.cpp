@@ -17,10 +17,6 @@
 namespace badgerdb
 {
 
-/**
- * Constructor of BufMgr class
- * Allocates an array for the buffer pool with bufs page frames and a corresponding BufDesc table
- */
 BufMgr::BufMgr(std::uint32_t bufs)
 	: numBufs(bufs)
 {
@@ -40,16 +36,11 @@ BufMgr::BufMgr(std::uint32_t bufs)
 	clockHand = bufs - 1;
 }
 
-/**
- * Destructor of BufMgr class
- * Flushes out all dirty pages and deallocates the buffer pool and the BufDesc table
- */
 BufMgr::~BufMgr()
 {
 	// flushes out all dirty pages
 	for (FrameId i = 0; i < numBufs; i++)
 	{
-		//TODO: whether check bufDescTable[clockHand].valid
 		if (bufDescTable[i].dirty && bufDescTable[i].valid)
 		{
 			bufDescTable[i].file->writePage(bufPool[i]);
@@ -64,21 +55,11 @@ BufMgr::~BufMgr()
 	delete[] bufDescTable;
 }
 
-/**
- * Advance clock to next frame in the buffer pool
- * 
- * @param frame   	Frame reference, frame ID of allocated frame returned via this variable
- * @throws BufferExceededException If no such buffer is found which can be allocated
- */
 void BufMgr::advanceClock()
 {
 	clockHand = (clockHand + 1) % numBufs;
 }
 
-/**
- * Allocates a free frame
- * if necessary, writing a dirty page back to disk
- */
 void BufMgr::allocBuf(FrameId &frame)
 {
 	// using the clock algorithm
@@ -127,15 +108,6 @@ void BufMgr::allocBuf(FrameId &frame)
 	frame = clockHand;
 }
 
-/**
- * Reads the given page from the file into a frame and returns the pointer to page.
- * If the requested page is already present in the buffer pool pointer to that frame is returned
- * otherwise a new frame is allocated from the buffer pool for reading the page.
- *
- * @param file   	File object
- * @param PageNo  Page number in the file to be read
- * @param page  	Reference to page pointer. Used to fetch the Page object in which requested page from file is read in.
- */
 void BufMgr::readPage(File *file, const PageId pageNo, Page *&page)
 {
 	FrameId frameId;
@@ -167,14 +139,6 @@ void BufMgr::readPage(File *file, const PageId pageNo, Page *&page)
 	page = &bufPool[frameId];
 }
 
-/**
- * Unpin a page from memory since it is no longer required for it to remain in memory.
- *
- * @param file   	File object
- * @param PageNo  Page number
- * @param dirty		True if the page to be unpinned needs to be marked dirty	
- * @throws  PageNotPinnedException If the page is not already pinned
- */
 void BufMgr::unPinPage(File *file, const PageId pageNo, const bool dirty)
 {
 	try
@@ -202,15 +166,6 @@ void BufMgr::unPinPage(File *file, const PageId pageNo, const bool dirty)
 	}
 }
 
-/**
- * Writes out all dirty pages of the file to disk.
- * All the frames assigned to the file need to be unpinned from buffer pool before this function can be successfully called.
- * Otherwise Error returned.
- *
- * @param file   	File object
- * @throws PagePinnedException If any page of the file is pinned in the buffer pool 
- * @throws BadBufferException If any frame allocated to the file is found to be invalid
- */
 void BufMgr::flushFile(const File *file)
 {
 	for (FrameId i = 0; i < numBufs; i++)
@@ -245,14 +200,6 @@ void BufMgr::flushFile(const File *file)
 	}
 }
 
-/**
- * Allocates a new, empty page in the file and returns the Page object.
- * The newly allocated page is also assigned a frame in the buffer pool.
- *
- * @param file   	File object
- * @param PageNo  Page number. The number assigned to the page in the file is returned via this reference.
- * @param page  	Reference to page pointer. The newly allocated in-memory Page object is returned via this reference.
- */
 void BufMgr::allocPage(File *file, PageId &pageNo, Page *&page)
 {
 	// allocate an empty page
@@ -272,13 +219,6 @@ void BufMgr::allocPage(File *file, PageId &pageNo, Page *&page)
 	page = &bufPool[frameId]; 
 }
 
-/**
- * Delete page from file and also from buffer pool if present.
- * Since the page is entirely deleted from file, its unnecessary to see if the page is dirty.
- *
- * @param file   	File object
- * @param PageNo  Page number
- */
 void BufMgr::disposePage(File *file, const PageId PageNo)
 {
 	try
@@ -300,9 +240,6 @@ void BufMgr::disposePage(File *file, const PageId PageNo)
 	file->deletePage(PageNo);
 }
 
-/**
- * Print member variable values. 
- */
 void BufMgr::printSelf(void)
 {
 	BufDesc *tmpbuf;

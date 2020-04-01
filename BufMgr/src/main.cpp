@@ -267,6 +267,7 @@ void test2()
 
 void test3()
 {
+	// read a invalid page
 	try
 	{
 		bufMgr->readPage(file4ptr, 1, page);
@@ -283,6 +284,7 @@ void test3()
 
 void test4()
 {
+	// unpin an unpined page
 	bufMgr->allocPage(file4ptr, i, page);
 	bufMgr->unPinPage(file4ptr, i, true);
 	try
@@ -299,6 +301,7 @@ void test4()
 
 void test5()
 {
+	// allocate more page than the number of buffer
 	for (i = 0; i < num; i++) {
 		bufMgr->allocPage(file5ptr, pid[i], page);
 		sprintf((char*)tmpbuf, "test.5 Page %d %7.1f", pid[i], (float)pid[i]);
@@ -368,7 +371,7 @@ void test7()
     }
     catch(PagePinnedException &e)
     {
-         PRINT_ERROR("ERROR :: Pages unpinned for file being flushed. Exception should have not been thrown before execution reaches this point.");
+        PRINT_ERROR("ERROR :: PagePinnedException. Pages unpinned for file being flushed. Exception should not been thrown at this point.");
     }
     
     std::cout << "Test 7 passed" << "\n";
