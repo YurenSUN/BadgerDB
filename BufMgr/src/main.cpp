@@ -1,11 +1,11 @@
 /**
-* FILE: buffer.cpp
+* FILE: main.cpp, buffer.cpp
 * ------------------
 * Author: Jiaru Fu (jfu57@wisc.edu)
 * Author: Yuren Sun (ysun299@wisc.edu)
 * Author: Tambre Hu (thu53@wisc.edu)
 * Course: CS 564
-* File Name: buffer.cpp
+* File Name: main.cpp
 * Professor: Paris Koutris
 * Due Date: 04/01/2020
 */
